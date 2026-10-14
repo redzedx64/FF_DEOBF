@@ -6,17 +6,17 @@ import json
 import gzip
 import difflib
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-REFERENCE = os.path.join(HERE, "reference.bin")
+current = os.path.dirname(os.path.abspath(__file__))
+ref = os.path.join(current, "ref.bin")
 DEFAULT_OUTPUT = "dumped_full.cs"
 
-TRANSPORT = {
+transport = {
     "UDPMsgPacket", "UDPMsgPacketResendInfo", "UDPMsgPacketTrackingData",
     "UDPReliableTracking", "UDPSession", "MUDPSession", "TCPMsgPacket",
     "UDPClientMessageBase", "UDPMessagePool", "NetworkSession",
 }
 
-CANON = {
+datas = {
     "uint": "U32", "UInt32": "U32", "int": "I32", "Int32": "I32",
     "ushort": "U16", "UInt16": "U16", "short": "I16", "Int16": "I16",
     "ulong": "U64", "UInt64": "U64", "long": "I64", "Int64": "I64",
@@ -26,16 +26,16 @@ CANON = {
     "char": "CHAR", "Char": "CHAR",
 }
 
-CLASS_LINE = re.compile(r"\bclass\s+([A-Za-z_]\w*)")
-MSGBASE_RE = re.compile(r":\s*UDPClientMessageBase\b")
-FIELD_RE = re.compile(r"^\s*public\s+(\S+)\s+(\w+)\s*;")
+class_line = re.compile(r"\bclass\s+([A-Za-z_]\w*)")
+msgbase = re.compile(r":\s*UDPClientMessageBase\b")
+fieldsre = re.compile(r"^\s*public\s+(\S+)\s+(\w+)\s*;")
 
 
 def norm(type_name):
     if "List`" in type_name or "List<" in type_name:
         return "LIST"
-    if type_name in CANON:
-        return CANON[type_name]
+    if type_name in datas:
+        return datas[type_name]
     if type_name.endswith("[]"):
         return "ARR"
     return "OBJ"
@@ -47,10 +47,10 @@ def normkey(name):
     return name.replace("_", "").upper()
 
 
-def load_reference():
-    if not os.path.isfile(REFERENCE):
-        sys.exit(f"[!] reference data not found next to the script: {REFERENCE}")
-    with gzip.open(REFERENCE, "rb") as f:
+def load_ref():
+    if not os.path.isfile(ref):
+        sys.exit(f"[!] ref data not found next to the script: {ref}")
+    with gzip.open(ref, "rb") as f:
         data = json.loads(f.read())
     order = [(name, tuple(sig.split(",")) if sig else ()) for name, sig in data["order"]]
     name_to_id = data["n2i"]
@@ -66,13 +66,13 @@ def parse(path):
     with open(path, encoding="utf-8", errors="replace") as f:
         for line in f:
             text = line.rstrip("\n")
-            match = CLASS_LINE.search(line)
+            match = class_line.search(line)
             if match:
                 name = match.group(1)
                 kind = None
-                if name in TRANSPORT:
+                if name in transport:
                     kind = "transport"
-                elif MSGBASE_RE.search(line):
+                elif msgbase.search(line):
                     kind = "msg"
                 if kind:
                     if cur is not None:
@@ -98,7 +98,7 @@ def parse(path):
                 section = None
                 continue
             if section in ("pre", "fields"):
-                fm = FIELD_RE.match(line)
+                fm = fieldsre.match(line)
                 if fm:
                     section = "fields"
                     cur["flds"].append((norm(fm.group(1)), fm.group(2), raw_index))
@@ -193,12 +193,12 @@ def main():
         sys.exit(f"[!] not found: {inp}")
     output = resolve_output(out_name)
 
-    ref_order, name_to_id, id_to_name, ref_fields = load_reference()
+    ref_order, name_to_id, id_to_name, ref_fields = load_ref()
     classes = parse(inp)
 
     msg_pos = [i for i, c in enumerate(classes) if c["kind"] == "msg"]
     transport_n = sum(1 for c in classes if c["kind"] == "transport")
-    print(f"[*] message classes: {len(msg_pos)}   transport classes: {transport_n}   reference: {len(ref_order)}")
+    print(f"[*] message classes: {len(msg_pos)}   transport classes: {transport_n}   ref: {len(ref_order)}")
 
     msg_sigs = [classes[i]["sig"] for i in msg_pos]
     assigned = assign_names(ref_order, msg_sigs)
@@ -219,7 +219,7 @@ def main():
     with open(output, "w", encoding="utf-8") as out:
         out.write(f"// de-obfuscated from (obfuscated) {os.path.basename(inp)}\n")
         out.write(f"// messages: exact={exact} near={near} new={new}   transport classes: {transport_n}\n")
-        out.write("// full bodies verbatim; class + field names restored where aligned\n\n")
+        out.write("// full bodies verbatim; class + field names restored wcurrent aligned\n\n")
 
         for idx, c in enumerate(classes):
             realname = None
@@ -257,7 +257,7 @@ def main():
             out.write("\n")
 
     print(f"[+] wrote {os.path.abspath(output)}")
-    print(f"    messages: exact={exact} near={near} new={new}   transport={transport_n}   fields renamed={renamed_fields}")
+    print(f"    messagess: exact={exact} near={near} new={new}   transport={transport_n}   fields renamed={renamed_fields}")
 
 
 if __name__ == "__main__":
