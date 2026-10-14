@@ -56,3 +56,8 @@ internal class RUDP_S2C_Create_PureModelObject : UDPClientMessageBase
 - `[near]` layout changed slightly (a field added/removed); best-effort match.
 - `[new]` no match in the reference; obfuscated name kept.
 - `[transport]` framing class kept by its real (un-obfuscated) name.
+
+### © Desire Team .
+<p align="center"><b>For Support, Please Contact ME <a href="https://t.me/redzedking">TELEGRAM</a> - <a href="https://discord.com/users/t3is">DISCORD</a> - <a href="https://www.youtube.com/@redzedking">YOUTUBE</a></b></p>
+
+
