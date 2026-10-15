@@ -25,7 +25,7 @@ The output file is written to the folder you run the command from.
 | File            | Purpose                                                       |
 | --------------- | ------------------------------------------------------------- |
 | `ff_deobf.py`   | The tool.                                                     |
-| `reference.bin` | Reference fingerprints + real names (gzip JSON). **Required** — keep it next to `ff_deobf.py`. |
+| `ref.bin` | Reference fingerprints + real names (gzip JSON). **Required** — keep it next to `ff_deobf.py`. |
 
 ## How names are recovered
 
